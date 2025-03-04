@@ -8,6 +8,7 @@ import java.util.Map;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import util.IOUtils;
 
 public class RequestHandler extends Thread {
     private static final Logger log = LoggerFactory.getLogger(RequestHandler.class);
@@ -32,20 +33,21 @@ public class RequestHandler extends Thread {
             }
 
             String[] tokens = line.split(" ");
+            int contentLength = 0;
 
-            while (!"".equals(line)) {
+            while (!line.isEmpty()) {
                 line = br.readLine();
                 log.info("http Header : {} ", line);
+                if(line.contains("Content-Length")) {
+                    contentLength = Integer.parseInt(line.split(":")[1].trim());
+                }
             }
 
             String url = tokens[1];
 
-            if(url.startsWith("/user/create")) {
-                int index = url.indexOf("?");
-                String requestPath = url.substring(0,index);
-                String queryString = url.substring(index+1);
-
-                Map<String, String> params = util.HttpRequestUtils.parseQueryString(queryString);
+            if(url.equals("/user/create")) {
+                String body = IOUtils.readData(br, contentLength);
+                Map<String, String> params = util.HttpRequestUtils.parseQueryString(body);
 
                 User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
                 log.info(user.toString());
