@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Map;
 
+import db.DataBase;
 import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +51,11 @@ public class RequestHandler extends Thread {
                 Map<String, String> params = util.HttpRequestUtils.parseQueryString(body);
 
                 User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+                DataBase.addUser(user);
                 log.info(user.toString());
-
+                url = "/index.html";
+                DataOutputStream dos = new DataOutputStream(out);
+                response302Header(dos, url);
             } else {
                 DataOutputStream dos = new DataOutputStream(out);
                 byte[] body = Files.readAllBytes(new File("./webapp" + tokens[1]).toPath());
@@ -59,6 +63,16 @@ public class RequestHandler extends Thread {
                 responseBody(dos, body);
             }
 
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+
+    private void response302Header(DataOutputStream dos, String url) {
+        try {
+            dos.writeBytes("HTTP/1.1 302 Redirect \r\n");
+            dos.writeBytes("Location: " + url + "\r\n");
+            dos.writeBytes("\r\n");
         } catch (IOException e) {
             log.error(e.getMessage());
         }
