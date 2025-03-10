@@ -1,4 +1,4 @@
-package webserver;
+package http;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,10 +15,9 @@ import java.util.Map;
 
 public class HttpRequest {
     private static final Logger log = LoggerFactory.getLogger(HttpRequest.class);
-    private String method;
-    private String path;
     private Map<String, String> headers = new HashMap<>();
     private Map<String, String> parameter = new HashMap<>();
+    private RequestLine requestLine;
 
 
     public HttpRequest (InputStream in) {
@@ -32,7 +31,7 @@ public class HttpRequest {
                 return;
             }
 
-            processRequestLine(line);
+            requestLine = new RequestLine(line);
 
             line = br.readLine();
             while (!line.isEmpty()) {
@@ -42,9 +41,11 @@ public class HttpRequest {
                 line = br.readLine();
             }
 
-            if (method.equals("POST")) {
+            if (getMethod().isPost()) {
                 String body = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
                 parameter = HttpRequestUtils.parseQueryString(body);
+            } else {
+                parameter = requestLine.getParameter();
             }
         } catch (IOException io) {
             log.error(io.getMessage());
@@ -52,25 +53,12 @@ public class HttpRequest {
 
     }
 
-    private void processRequestLine(String requestLine) {
-        String[] tokens = requestLine.split(" ");
-        method = tokens[0];
-        path = tokens[1];
-
-        if (path.contains("?")) {
-            int index = tokens[1].indexOf("?");
-            path = tokens[1].substring(0, index);
-            String queryString = tokens[1].substring(index + 1);
-            parameter = util.HttpRequestUtils.parseQueryString(queryString);
-        }
-    }
-
-    public String getMethod() {
-        return method;
+    public HttpMethod getMethod() {
+        return requestLine.getMethod();
     }
 
     public String getPath() {
-        return path;
+        return requestLine.getPath();
     }
 
     public String getHeader(String header) {
