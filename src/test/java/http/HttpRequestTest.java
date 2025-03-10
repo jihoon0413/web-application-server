@@ -1,7 +1,6 @@
-package util;
+package http;
 
 import org.junit.jupiter.api.Test;
-import webserver.HttpRequest;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,7 +14,7 @@ public class HttpRequestTest {
         InputStream in = new FileInputStream(new File(testDirectory + "Http_GET.txt"));
         HttpRequest request = new HttpRequest(in);
 
-        assert("GET").equals(request.getMethod());
+        assert(HttpMethod.GET).equals(request.getMethod());
         assert("/user/create").equals(request.getPath());
         assert("keep-alive").equals(request.getHeader("Connection"));
         assert("asdf").equals(request.getParameter("userId"));
@@ -27,7 +26,7 @@ public class HttpRequestTest {
 
         HttpRequest request = new HttpRequest(in);
 
-        assert("POST").equals(request.getMethod());
+        assert(HttpMethod.POST).equals(request.getMethod());
         assert("/user/create").equals(request.getPath());
         assert("keep-alive").equals(request.getHeader("Connection"));
         assert("asdf").equals(request.getParameter("userId"));
