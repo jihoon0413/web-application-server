@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
+import controller.AbstractController;
+import controller.Controller;
 import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
@@ -30,59 +32,18 @@ public class RequestHandler extends Thread {
         try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
             HttpRequest request = new HttpRequest(in);
             HttpResponse response = new HttpResponse(out);
-            String path = getDefaultPath(request.getPath());
 
+            Controller controller = RequestMapping.getController(request.getPath());
 
-
-            if(path.equals("/user/create")) {
-
-                User user = new User(request.getParameter("userId"), request.getParameter("password"), request.getParameter("name"),request.getParameter("email"));
-                DataBase.addUser(user);
-                response.sendRedirect("/index.html");
-            } else if(path.equals("/user/login")) {
-                User user = DataBase.findUserById(request.getParameter("userId"));
-                if(user != null && Objects.equals(user.getPassword(), request.getParameter("password"))) {
-                    response.addHeader("Set-Cookie", "logined=true; Path=/");
-                    response.sendRedirect("/index.html");
-                } else {
-                    response.sendRedirect("/user/login_failed.html");
-                }
-            } else if (path.equals("/user/list.html")) {
-                if(!isLogin(request.getHeader("Cookie"))) {
-                    response.sendRedirect("/user/login.html");
-                    return;
-                }
-
-                Collection<User> users = DataBase.findAll();
-                StringBuilder sb = new StringBuilder();
-                sb.append("<table border='1'>");
-                for (User user : users) {
-                    sb.append("<tr>");
-                    sb.append("<td>").append(user.getUserId()).append("</td>");
-                    sb.append("<td>").append(user.getName()).append("</td>");
-                    sb.append("<td>").append(user.getEmail()).append("</td>");
-                    sb.append("</tr>");
-                }
-                sb.append("</table>");
-                response.forwardBody(sb.toString());
-            } else {
+            if(controller == null) {
+                String path = getDefaultPath(request.getPath());
                 response.forward(path);
+            } else {
+                controller.service(request, response);
             }
-
         } catch (IOException e) {
             log.error(e.getMessage());
         }
-    }
-
-    private boolean isLogin(String line) {
-        Map<String, String> cookies = HttpRequestUtils.parseCookies(line);
-
-        String value = cookies.get("logined");
-        if(value == null) {
-            return false;
-
-        }
-        return Boolean.parseBoolean(cookies.get("logined"));
     }
 
     private String getDefaultPath(String path) {
