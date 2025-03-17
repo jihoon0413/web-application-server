@@ -69,4 +69,11 @@ public class HttpRequest {
         return parameter.get(key);
     }
 
+    public HttpCookie getCookies() {
+        return new HttpCookie(headers.get("Cookie"));
+    }
+
+    public HttpSession getSession() {
+        return HttpSessions.getSession(getCookies().getCookie("JSESSIONID"));
+    }
 }

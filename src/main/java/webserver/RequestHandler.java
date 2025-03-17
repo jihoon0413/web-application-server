@@ -2,16 +2,11 @@ package webserver;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
-
-import controller.AbstractController;
+import java.util.UUID;
 import controller.Controller;
-import db.DataBase;
 import http.HttpRequest;
 import http.HttpResponse;
-import model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import util.HttpRequestUtils;
@@ -34,6 +29,10 @@ public class RequestHandler extends Thread {
             HttpResponse response = new HttpResponse(out);
 
             Controller controller = RequestMapping.getController(request.getPath());
+
+            if(request.getCookies().getCookie("JSESSIONID") == null) {
+                response.addHeader("Set-Cookie", "JSESSIONID=" + UUID.randomUUID());
+            }
 
             if(controller == null) {
                 String path = getDefaultPath(request.getPath());
